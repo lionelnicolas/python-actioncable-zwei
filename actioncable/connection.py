@@ -9,6 +9,9 @@ import logging
 import time
 import websocket
 
+logger = logging.getLogger('actioncable')
+
+
 class Connection:
     """
     The connection to a websocket server
@@ -29,7 +32,7 @@ class Connection:
         self.cookie = cookie
         self.header = header
 
-        self.logger = logging.getLogger('ActionCable Connection')
+        self.logger = logger
 
         self.subscriptions = {}
 

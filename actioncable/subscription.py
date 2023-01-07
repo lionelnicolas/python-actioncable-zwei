@@ -6,6 +6,8 @@ import uuid
 import json
 import logging
 
+logger = logging.getLogger('actioncable')
+
 
 class Subscription:
     """
@@ -20,13 +22,13 @@ class Subscription:
 
         self.connection = connection
         self.identifier = identifier
-        
+
         self.receive_callback = None
 
         self.state = 'unsubcribed'
         self.message_queue = []
 
-        self.logger = logging.getLogger('ActionCable Subscription ({})'.format(self.identifier))
+        self.logger = logger
 
         self.connection.subscriptions[self.uuid] = self
 
