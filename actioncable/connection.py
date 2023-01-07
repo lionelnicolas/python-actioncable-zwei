@@ -3,7 +3,6 @@ ActionCable connection.
 """
 
 import threading
-import uuid
 import json
 import logging
 import time
@@ -61,9 +60,8 @@ class Connection:
 
         self.auto_reconnect = True
 
-        self.ws_thread = threading.Thread(
-            name="APIConnectionThread_{}".format(uuid.uuid1()),
-            target=self._run_forever)
+        self.ws_thread = threading.Thread(target=self._run_forever)
+        self.ws_thread.name = self.ws_thread.name.replace("Thread", "APIConnection")
         self.ws_thread.daemon = True
         self.ws_thread.start()
 
