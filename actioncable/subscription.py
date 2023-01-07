@@ -13,15 +13,17 @@ class Subscription:
     """
     Subscriptions on a server.
     """
-    def __init__(self, connection, identifier):
+    def __init__(self, connection, identifier, on_event=None):
         """
         :param connection: The connection which is used to subscribe.
         :param identifier: (Optional) Additional identifier information.
+        :param on_event: (Optional) Core event callback.
         """
         self.uuid = str(uuid.uuid1())
 
         self.connection = connection
         self.identifier = identifier
+        self.on_event = on_event
 
         self.receive_callback = None
 
@@ -48,7 +50,7 @@ class Subscription:
         }
 
         self.connection.send(data)
-        self.state = 'pending'
+        self._set_state('pending')
 
     def remove(self):
         """
@@ -62,7 +64,7 @@ class Subscription:
         }
 
         self.connection.send(data)
-        self.state = 'unsubscribed'
+        self._set_state('unsubscribed')
 
     def send(self, message):
         """
@@ -124,13 +126,23 @@ class Subscription:
         else:
             self.logger.warning('Message type unknown. ({})'.format(message_type))
 
+    def _on_event(self, event, data=None):
+        """
+        Called to report core events to parent
+        """
+
+        if self.on_event is None:
+            return
+
+        self.on_event(event, data)
+
     def _subscribed(self):
         """
         Called when the subscription was
         accepted successfully.
         """
         self.logger.debug('Subscription confirmed.')
-        self.state = 'subscribed'
+        self._set_state('subscribed')
         for message in self.message_queue:
             self.send(message)
 
@@ -140,8 +152,13 @@ class Subscription:
         rejected by the server.
         """
         self.logger.warning('Subscription rejected.')
-        self.state = 'rejected'
+        self._set_state('rejected')
         self.message_queue = []
+
+    def _set_state(self, state):
+        """Set state attribute"""
+
+        self._on_event(state)
 
     def _identifier_string(self):
         return json.dumps(self.identifier)

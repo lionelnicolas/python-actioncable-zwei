@@ -15,7 +15,7 @@ class Connection:
     """
     The connection to a websocket server
     """
-    def __init__(self, url, origin=None, log_ping=False, cookie=None, header=None):
+    def __init__(self, url, origin=None, log_ping=False, cookie=None, header=None, on_event=None):
         """
         :param url: The url of the cable server.
         :param origin: (Optional) The origin.
@@ -30,6 +30,7 @@ class Connection:
         self.log_ping = log_ping
         self.cookie = cookie
         self.header = header
+        self.on_event = on_event
 
         self.logger = logger
 
@@ -97,6 +98,7 @@ class Connection:
                 time.sleep(2)
             except Exception as exc:
                 self.logger.error('Connection loop raised exception. Exception: %s', exc)
+                self._on_event("exception", exc)
 
     def send(self, data):
         """
@@ -110,11 +112,22 @@ class Connection:
 
         self.websocket.send(json.dumps(data))
 
+    def _on_event(self, event, data=None):
+        """
+        Called to report core events to parent
+        """
+
+        if self.on_event is None:
+            return
+
+        self.on_event(event, data)
+
     def _on_open(self, socket):
         """
         Called when the connection is open.
         """
         self.logger.debug('Connection established.')
+        self._on_event("connected")
 
 
     def _on_message(self, socket, message):
@@ -139,6 +152,7 @@ class Connection:
             subscription.received(data)
         elif message_type == 'welcome':
             self.logger.debug('Welcome message received.')
+            self._on_event("welcomed")
 
             for subscription in self.subscriptions.values():
                 if subscription.state == 'connection_pending':
@@ -159,6 +173,8 @@ class Connection:
         for subscription in self.subscriptions.values():
             if subscription.state == 'subscribed':
                 subscription.state = 'connection_pending'
+
+        self._on_event("closed")
 
     @property
     def socket_present(self):
