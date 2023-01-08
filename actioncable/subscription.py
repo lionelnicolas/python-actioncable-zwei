@@ -158,6 +158,7 @@ class Subscription:
     def _set_state(self, state):
         """Set state attribute"""
 
+        self.state = state
         self._on_event(state)
 
     def _identifier_string(self):
